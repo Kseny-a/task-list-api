@@ -51,12 +51,15 @@ def validate_task_id(task_id):
 def create_task():
     request_body = request.get_json()
 
-    title = request_body["title"]
-    description = request_body["description"]
+    title = request_body.get("title")
+    description = request_body.get("description")
     completed_at = request_body.get("completed_at")
-    #if not completed_at:
-    #    completed_at = None
 
+    if title is None or description is None:
+
+        response = {"details": "Invalid data"}
+        return response, 400
+  
     new_task = Task(title=title, description=description, completed_at=completed_at)
     db.session.add(new_task)
     db.session.commit()
