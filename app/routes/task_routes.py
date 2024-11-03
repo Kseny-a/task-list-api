@@ -1,12 +1,18 @@
 from flask import Blueprint, abort, make_response, request, Response
 from app.models.task import Task
 from ..db import db
+from sqlalchemy import asc, desc
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
 @tasks_bp.get("")
 def get_all_tasks():
-    query = db.select(Task).order_by(Task.id)
+    query = db.select(Task)
+    sort_order = request.args.get("sort", "asc")
+    if sort_order == "desc":
+        query = query.order_by(Task.title.desc())
+    else:    
+        query = query.order_by(Task.title)
     tasks = db.session.scalars(query)
     tasks_response = []
     for task in tasks:
