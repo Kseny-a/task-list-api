@@ -11,24 +11,25 @@ def get_all_tasks():
     tasks_response = []
     for task in tasks:
         tasks_response.append(
+        
             {
                 "id": task.id,
                 "title": task.title,
                 "description": task.description,
-                "is_completed": bool(task.completed_at) 
+                "is_complete": bool(task.completed_at) 
             }
         )
-    return tasks_response
+    return tasks_response, 200
 
 @tasks_bp.get("/<task_id>")
 def get_one_task(task_id):
     task = validate_task_id(task_id)
 
-    return {
+    return { "task":{
                 "id": task.id,
                 "title": task.title,
                 "description": task.description,
-                "is_completed": bool(task.completed_at)
+                "is_complete": bool(task.completed_at)}
             }
 
 def validate_task_id(task_id):
@@ -52,7 +53,7 @@ def create_task():
 
     title = request_body["title"]
     description = request_body["description"]
-    completed_at = request_body["completed_at"]
+    completed_at = request_body.get("completed_at")
     #if not completed_at:
     #    completed_at = None
 
@@ -61,10 +62,11 @@ def create_task():
     db.session.commit()
 
     response = {
+        "task":{
                 "id": new_task.id,
                 "title": new_task.title,
                 "description": new_task.description,
-                "is_completed": bool(new_task.completed_at) 
+                "is_complete": bool(new_task.completed_at)} 
             }
     return response, 201
 
@@ -75,19 +77,27 @@ def update_task(task_id):
 
     task.title = request_body["title"]
     task.description = request_body["description"]
-    #task.completed_at = request_body["completed_at"]
+   # task.completed_at = request_body["completed_at"]
 
     db.session.commit()
+    response = {
+        "task":{
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": bool(task.completed_at)} 
+            }
 
-    return Response(status=204, mimetype="application/json")
+    return response, 200
 
 @tasks_bp.delete("/<task_id>")
 def delete_task(task_id):
     task = validate_task_id(task_id)
+
     db.session.delete(task)
     db.session.commit()
 
-    response = {
-                "details": f"Task {task_id} successfully deleted."
-            }
-    return response, 200
+    response_message = f'Task {task.id} "{task.title}" successfully deleted'
+    response_body = {'details': response_message}
+
+    return response_body, 200
