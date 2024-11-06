@@ -2,6 +2,7 @@ from flask import Blueprint, abort, make_response, request, Response
 from app.models.task import Task
 from ..db import db
 from sqlalchemy import asc, desc
+from datetime import datetime, date
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -110,3 +111,35 @@ def delete_task(task_id):
     response_body = {'details': response_message}
 
     return response_body, 200
+
+@tasks_bp.patch("/<task_id>/mark_complete")
+def mark_task_complete(task_id):
+    task = validate_task_id(task_id)
+    #now = datetime.now()
+    #task.competed_at = now.strftime("%m/%d/%Y")
+    task.completed_at = date.today()
+    db.session.commit()
+    response = {
+            "task":{
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": bool(task.completed_at)} 
+            }
+
+    return response, 200
+
+@tasks_bp.patch("/<task_id>/mark_incomplete")
+def mark_task_incomplete(task_id):
+    task = validate_task_id(task_id)
+    task.completed_at = None
+    db.session.commit()
+    response = {
+            "task":{
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": bool(task.completed_at)} 
+            }
+
+    return response, 200
