@@ -136,9 +136,11 @@ def mark_task_complete(task_id):
 
 
     response = requests.post(url, params=query_params)
+    #db.session.commit()
 
     #r = requests.post(url, headers, json=payload)
-    if response.status_code != 200 or not response.json().get('ok'):
+    if response.status_code != 200:
+    #or not response.json().get('ok'):
         return {"error": f"Failed to send notification to Slack"}, 500
 
     response = {
