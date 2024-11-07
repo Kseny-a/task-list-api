@@ -77,5 +77,17 @@ def update_goal(goal_id):
                 "id": goal.id,
                 "title": goal.title} 
             }
-
+    
     return response, 200
+
+@goals_bp.delete("/<goal_id>")
+def delete_goal(goal_id):
+    goal = validate_goal_id(goal_id)
+
+    db.session.delete(goal)
+    db.session.commit()
+
+    response_message = f'Goal {goal.id} "{goal.title}" successfully deleted'
+    response_body = {'details': response_message}
+
+    return response_body, 200
