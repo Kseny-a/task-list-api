@@ -3,6 +3,11 @@ from app.models.task import Task
 from ..db import db
 from sqlalchemy import asc, desc
 from datetime import datetime, date
+import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -119,6 +124,23 @@ def mark_task_complete(task_id):
     #task.competed_at = now.strftime("%m/%d/%Y")
     task.completed_at = date.today()
     db.session.commit()
+ 
+    url = 'https://slack.com/api/chat.postMessage'
+    slack_token = os.environ.get('API_token')
+    # headers = {'Authorization': f'Bearer {slack_token}'}
+    # payload = {'channel': 'U07KBLD0ZSN', 'text': f'Someone just completed the task {task.title}'}
+    query_params = {
+    "token": slack_token,
+    "channel": 'U07KBLD0ZSN',
+    "text":  f'Someone just completed the task {task.title}'}
+
+
+    response = requests.post(url, params=query_params)
+
+    #r = requests.post(url, headers, json=payload)
+    if response.status_code != 200 or not response.json().get('ok'):
+        return {"error": f"Failed to send notification to Slack"}, 500
+
     response = {
             "task":{
                 "id": task.id,
