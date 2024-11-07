@@ -41,3 +41,41 @@ def validate_goal_id(goal_id):
         abort(make_response(response, 404))   
 
     return goal    
+
+@goals_bp.post("")
+def create_goal():
+    request_body = request.get_json()
+
+    title = request_body.get("title")
+
+    if title is None:
+
+        response = {"details": "Invalid data"}
+        return response, 400
+    
+    new_goal = Goal(title=title)
+    db.session.add(new_goal)
+    db.session.commit()
+
+    response = {
+        "goal":{
+                "id": new_goal.id,
+                "title": new_goal.title}
+            }
+    return response, 201
+
+@goals_bp.put("/<goal_id>")
+def update_goal(goal_id):
+    goal = validate_goal_id(goal_id)
+    request_body = request.get_json()
+
+    goal.title = request_body["title"]
+
+    db.session.commit()
+    response = {
+        "goal":{
+                "id": goal.id,
+                "title": goal.title} 
+            }
+
+    return response, 200
