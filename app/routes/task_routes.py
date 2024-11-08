@@ -1,5 +1,6 @@
 from flask import Blueprint, abort, make_response, request, Response
 from app.models.task import Task
+from app.models.goal import Goal
 from ..db import db
 from sqlalchemy import asc, desc
 from datetime import datetime, date
@@ -22,27 +23,17 @@ def get_all_tasks():
     tasks = db.session.scalars(query)
     tasks_response = []
     for task in tasks:
-        tasks_response.append(
+        tasks_response.append(task.to_dict())
         
-            {
-                "id": task.id,
-                "title": task.title,
-                "description": task.description,
-                "is_complete": bool(task.completed_at) 
-            }
-        )
     return tasks_response, 200
 
 @tasks_bp.get("/<task_id>")
 def get_one_task(task_id):
     task = validate_task_id(task_id)
+    task_dict = task.to_dict()
 
-    return { "task":{
-                "id": task.id,
-                "title": task.title,
-                "description": task.description,
-                "is_complete": bool(task.completed_at)}
-            }
+    return { "task": task_dict }
+
 
 def validate_task_id(task_id):
     try:
@@ -92,7 +83,7 @@ def update_task(task_id):
 
     task.title = request_body["title"]
     task.description = request_body["description"]
-   # task.completed_at = request_body["completed_at"]
+
 
     db.session.commit()
     response = {
@@ -127,21 +118,11 @@ def mark_task_complete(task_id):
  
     url = 'https://slack.com/api/chat.postMessage'
     slack_token = os.environ.get('API_token')
-    # headers = {'Authorization': f'Bearer {slack_token}'}
-    # payload = {'channel': 'U07KBLD0ZSN', 'text': f'Someone just completed the task {task.title}'}
-    query_params = {
-    "token": slack_token,
-    "channel": 'U07KBLD0ZSN',
-    "text":  f'Someone just completed the task {task.title}'}
+    headers = {'Authorization': f'Bearer {slack_token}'}
+    payload = {'channel': 'task-notifications', 'text': f'Someone just completed the task {task.title}'}
 
 
-    response = requests.post(url, params=query_params)
-    #db.session.commit()
-
-    #r = requests.post(url, headers, json=payload)
-    if response.status_code != 200:
-    #or not response.json().get('ok'):
-        return {"error": f"Failed to send notification to Slack"}, 500
+    response = requests.post(url, headers=headers, data=payload)
 
     response = {
             "task":{
@@ -150,7 +131,6 @@ def mark_task_complete(task_id):
                 "description": task.description,
                 "is_complete": bool(task.completed_at)} 
             }
-
     return response, 200
 
 @tasks_bp.patch("/<task_id>/mark_incomplete")

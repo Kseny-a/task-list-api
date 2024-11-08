@@ -1,5 +1,7 @@
 from flask import Blueprint, abort, make_response, request, Response
 from app.models.goal import Goal
+from app.models.task import Task
+from app.routes.task_routes import validate_task_id
 from ..db import db
 
 goals_bp = Blueprint("goals_bp", __name__, url_prefix="/goals")
@@ -91,3 +93,38 @@ def delete_goal(goal_id):
     response_body = {'details': response_message}
 
     return response_body, 200
+
+@goals_bp.post("/<goal_id>/tasks")
+def create_goal_with_tasks(goal_id):
+    goal = validate_goal_id(goal_id)
+    request_body = request.get_json()
+   
+    task_list = request_body["task_ids"]
+    task_list_in_goal = []
+    for task_id in task_list:
+    
+        task = validate_task_id(task_id)
+        task.goal_id = goal.id 
+        task_list_in_goal.append(task.id)
+
+    db.session.commit()
+    response = {
+                "id": goal.id,
+                "task_ids": task_list_in_goal}
+    
+    return response, 200
+
+@goals_bp.get("/<goal_id>/tasks")
+def get_goal_with_tasks(goal_id):
+    goal = validate_goal_id(goal_id)
+
+    tasks = [task.to_dict() for task in goal.tasks]
+    print(f"TEST{tasks}")
+
+    response = {"id": goal.id,
+            "title": goal.title,
+            "tasks": tasks}
+    
+
+    return response
+
